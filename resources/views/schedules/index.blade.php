@@ -1,7 +1,17 @@
-@extends('layouts.calendar')
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-@section('style')
-    <style>
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'Laravel') }}</title>
+
+	<link href="/assets/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<style>
         #context-menu {
             display: none;
             position: absolute;
@@ -33,65 +43,24 @@
             padding-right: 1em;
         }
     </style>
-@endsection
 
-@section('contain')
+    <!-- Fonts -->
+    <link rel="dns-prefetch" href="//fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
+    
+    <!-- Scripts -->
+    @vite(['resources/js/fullcalendar.js'])
+</head>
+<body>
     <div id="calendar-container">
         <div id="calendar"></div>
     </div>
-@endsection
 
-@section('modal')
-    <div id="context-menu" class="dropdown-menu" style="display:none; position:absolute;">
+	<div id="context-menu" class="dropdown-menu" style="display:none; position:absolute;">
         <a class="dropdown-item" href="#" onclick="$('#editModal').modal('show')">Edit</a>
         <a class="dropdown-item" href="#" onclick="deleteEvent()">Delete</a>
     </div>
-@endsection
 
-@section('script')
-    <script>
-        function updateEvent() {
-            let id = document.getElementById('editEventId').value;
-            let title = document.getElementById('editTitle').value;
-            let description = document.getElementById('editDescription').value;
-            let start = document.getElementById('editStart').value;
-            let end = document.getElementById('editEnd').value;
-
-            fetch(`/api/schedules/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    title: title,
-                    description: description,
-                    start: start,
-                    end: end
-                })
-            }).then(response => {
-                if (response.ok) {
-                    $('#editModal').modal('hide');
-                    calendar.refetchEvents();
-                }
-            });
-        }
-
-        function deleteEvent() {
-            let id = document.getElementById('editEventId').value;
-
-            fetch(`/api/schedules/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            }).then(response => {
-                if (response.ok) {
-                    $('#editModal').modal('hide');
-                    calendar.refetchEvents();
-                }
-            });
-        }
-    </script>
-@endsection
+	<script src="/assets/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -27,9 +27,3 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::post('/admin/user/{user}/role', [AdminController::class, 'updateRole'])->name('admin.updateRole');
 });
-
-Route::get('/tokens/create', function (Request $request) {
-    $token = $request->user()->createToken('test-token');
- 
-    return ['token' => $token->plainTextToken];
-});

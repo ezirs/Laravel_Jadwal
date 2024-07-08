@@ -2,6 +2,7 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
+import momentTimezonePlugin from '@fullcalendar/moment-timezone'
 import interactionPlugin from '@fullcalendar/interaction';
 
 let calendar;
@@ -10,8 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let calendarEl = document.getElementById('calendar');
 
     let calendar = new Calendar(calendarEl, {
+        timeZone: 'Asia/Jakarta',
+        locale: 'id',
         height: '100%',
-        plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
+        plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, momentTimezonePlugin],
         customButtons: {
             tambahJadwal: {
                 text: 'Tambah Jadwal',
@@ -36,7 +39,8 @@ document.addEventListener('DOMContentLoaded', function () {
             list: 'List'
         },
         noEventsContent: 'Tidak ada jadwal untuk ditampilkan',
-        events: '/api/schedules',   
+        events: '/api/schedules',
+        editable: true,
         selectable: true,
         select: function(info) {
             let title = prompt('Enter Event Title:');
