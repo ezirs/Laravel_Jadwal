@@ -6,6 +6,19 @@ import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import interactionPlugin from "@fullcalendar/interaction";
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import moment from 'moment';
+import Swal from 'sweetalert2';
+const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
+});
+  
 
 let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 let namaJadwal = document.getElementById('nama-jadwal');
@@ -25,7 +38,7 @@ let idSchedule = '';
 const form = document.querySelector('#tambahUbahJadwalModal form');
 let formIsDirty = false;
 
-function setDefaulModal() {
+function setDefaultModal() {
     tambahUbahJadwalLabel.innerHTML = "Tambah Jadwal";
     simpanUbahJadwal.innerHTML = "Simpan Jadwal";
 }
@@ -80,19 +93,16 @@ document.addEventListener("DOMContentLoaded", function () {
             week: "Week",
             day: "Day",
             list: "List",
-            list: "List",
         },
         noEventsContent: "Tidak ada jadwal untuk ditampilkan",
-        editable: true, //
-        selectable: true, //
-        
+        editable: true,
+        selectable: true,
         events: '/api/schedules',
         eventDrop: (info) => handlerEventDrop(info),
         eventClick: (info) => alert(info.event.extendedProps.use_datetime),
         select: (info) => {
             tanggalMulai.value = moment(info.start).format("YYYY-MM-DD");
             tanggalAkhir.value = moment(info.end).subtract(1, 'days').format("YYYY-MM-DD");
-            formSeleact = true;
             tambahUbahJadwalModal.show();
         },
         eventDidMount: (info) => handlerEventDidMount(info),
@@ -143,19 +153,30 @@ simpanUbahJadwal.addEventListener("click", () => {
         return;
     }
 
-    fetch("/schedules", {
+    fetch("/admin/schedules", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRF-TOKEN": csrfToken
         },
         body: JSON.stringify(data),
-    }).then((response) => {
+    }).then(response => {
         if (response.ok) {
             closeTambahModal();
             calendar.refetchEvents();
+            return response.json();
         }
-    });
+    }).then(responseData => {
+        Toast.fire({
+            icon: "success",
+            title: responseData.message
+        });
+    }).catch(error => {
+        Toast.fire({
+            icon: "error",
+            title: "Gagal menghapus jadwal"
+        });
+    });;
 });
 
 form.addEventListener('input', () => {
@@ -235,20 +256,31 @@ function handlerEventDrop(info) {
             };
         }
 
-        fetch(`/schedules/${info.event.id}`, {
+        fetch(`/admin/schedules/${info.event.id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRF-TOKEN": csrfToken
             },
             body: JSON.stringify(data),
-        }).then((response) => {
+        }).then(response => {
             if (response.ok) {
                 calendar.refetchEvents();
+                return response.json();
             } else {
                 info.revert();
             }
-        });
+        }).then(responseData => {
+            Toast.fire({
+                icon: "success",
+                title: responseData.message
+            });
+        }).catch(error => {
+            Toast.fire({
+                icon: "error",
+                title: "Gagal menghapus jadwal"
+            });
+        });;
     }
 }
 
@@ -269,48 +301,66 @@ function handlerEventDidMount(info) {
         `;
         menu.style.top = e.pageY + "px";
         menu.style.left = e.pageX + "px";
+
         document.body.appendChild(menu);
 
-        menu.querySelector("button:first-child").addEventListener("click", () => {
-            tambahUbahJadwalLabel.innerHTML = "Ubah Jadwal";
-            simpanUbahJadwal.innerHTML = "Ubah Jadwal";
-            idSchedule = info.event.id;
-            namaJadwal.value = info.event.title;
-            dateTime.checked = info.event.extendedProps.use_datetime;
-            datetimeChange();
-            tanggalMulai.value = info.event.extendedProps.use_datetime ?
-            moment(info.event.start).format("YYYY-MM-DD HH:mm") : moment(info.event.start).format("YYYY-MM-DD");
-            tanggalAkhir.value = info.event.extendedProps.use_datetime ?
-            moment(info.event.end).format("YYYY-MM-DD HH:mm") : moment(info.event.end).subtract(1, 'days').format("YYYY-MM-DD");
-            _link.value = info.event.url;
-            warnaJadwal.value = info.event.backgroundColor;
-            description.value = info.event.extendedProps.description;
-            tj.show();
-        });
+        menu.addEventListener("click", (event) => {
+            if (event.target.classList.contains("dropdown-item")) {
+                let action = event.target.textContent.trim();
+                if (action === "Edit") {
+                    idSchedule = info.event.id;
+                    namaJadwal.value = info.event.title;
+                    description.value = info.event.extendedProps.description ? info.event.extendedProps.description : '';
+                    _link.value = info.event.url;
+                    warnaJadwal.value = info.event.backgroundColor;
 
-        menu.querySelector("button:last-child").addEventListener("click", () => {
-            if (confirm("Apakah Anda yakin ingin menghapus jadwal tersebut?")) {
-                deleteSchedule(info);
+                    if (!info.event.extendedProps.use_datetime) {
+                        dateTime.checked = false;
+                        tanggalMulai.value = moment(info.event.start).format("YYYY-MM-DD");
+                        tanggalAkhir.value = info.event.end ? moment(info.event.end).subtract(1, 'days').format("YYYY-MM-DD") : '';
+                        datetimeChange();
+                    } else {
+                        dateTime.checked = true;
+                        tanggalMulai.value = moment(info.event.start).format("YYYY-MM-DDTHH:mm:ss");
+                        tanggalAkhir.value = info.event.end ? moment(info.event.end).format("YYYY-MM-DDTHH:mm:ss") : '';
+                        datetimeChange();
+                    }
+
+                    tambahUbahJadwalLabel.innerHTML = "Ubah Jadwal";
+                    simpanUbahJadwal.innerHTML = "Ubah Jadwal";
+                    tj.show();
+                } else if (action === "Delete") {
+                    if (confirm("Apakah Anda yakin ingin menghapus jadwal ini?")) {
+                        fetch(`/admin/schedules/${info.event.id}`, {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": csrfToken
+                            },
+                        }).then(response => {
+                            if (response.ok) {
+                                calendar.refetchEvents();
+                                return response.json();
+                            }
+                        }).then(responseData => {
+                            Toast.fire({
+                                icon: "success",
+                                title: responseData.message
+                            });
+                        }).catch(error => {
+                            Toast.fire({
+                                icon: "error",
+                                title: "Gagal menghapus jadwal"
+                            });
+                        });
+                    }
+                }
+                menu.remove();
             }
         });
-    });
-}
 
-document.addEventListener("click", () => {
-    let existingMenu = document.getElementById("context-menu");
-    existingMenu && existingMenu.remove();
-});
-
-function deleteSchedule(info) {
-    fetch(`/schedules/${info.event.id}`, {
-        method: "DELETE",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": csrfToken
-        },
-    }).then((response) => {
-        if (response.ok) {
-            calendar.refetchEvents();
-        }
+        document.addEventListener("click", () => {
+            menu.remove();
+        }, { once: true });
     });
 }

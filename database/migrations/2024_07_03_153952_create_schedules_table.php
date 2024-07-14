@@ -12,13 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('schedules', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->unsignedBigInteger('user_id');
             $table->string('title');
+            $table->date('start')->nullable();
+            $table->dateTime('start_datetime')->nullable();
+            $table->date('end')->nullable();
+            $table->dateTime('end_datetime')->nullable();
+            $table->boolean('use_datetime')->default(false);
+            $table->string('link')->nullable();
+            $table->string('schedule_color')->default('#3788d8');
             $table->text('description')->nullable();
-            $table->dateTime('start');
-            $table->dateTime('end');
-            $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
+            $table->enum('status', ['accepted', 'pending', 'rejected']);
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

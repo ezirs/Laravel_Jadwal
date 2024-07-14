@@ -50,7 +50,13 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
     <!-- Scripts -->
-    @vite(['resources/js/user/fullcalendar.js'])
+    @auth
+        @if (auth()->user()->role === 'admin')
+            @vite(['resources/js/v1/fullcalendar.js'])
+        @else
+            @vite(['resources/js/user/fullcalendar.js'])
+        @endif
+    @endauth
 </head>
 
 <body>
